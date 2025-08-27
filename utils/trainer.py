@@ -254,7 +254,7 @@ class Trainer():
         best_epoch = 0
         best_err = 1
         self.logs['best_epoch'] = best_epoch
-        plot_figs = True # self.params.plot_figs
+        plot_figs = self.params.plot_figs
 
         for epoch in range(self.startEpoch, self.params.max_epochs):
             self.epoch = epoch
@@ -325,7 +325,8 @@ class Trainer():
                             title="Visualization",
                             series="fields",
                             figure=fig,
-                            iteration=self.epoch+1
+                            iteration=self.epoch+1,
+                            report_image=True
                         )
                         plt.close(fig)
                 except Exception as e:

@@ -25,11 +25,11 @@ python utils/get_scale.py
 export MASTER_ADDR=$(hostname)
 config_file=./config/operators_poisson.yaml
 config="poisson-scale-k1_5"
-run_num="02"
+run_num="03"
 
 # path/to/logs
 results_dir=$SCRATCH/clearml_tests/results
 mkdir -p ${results_dir}
 
 source export_DDP_vars.sh
-python train.py --yaml_config=$config_file --config=$config --run_num=$run_num --root_dir=$results_dir
+srun --overlap -l -n 4 --cpus-per-task=10 --gpus-per-node 4 python train.py --yaml_config=$config_file --config=$config --run_num=$run_num --root_dir=$results_dir
