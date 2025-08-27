@@ -68,7 +68,7 @@ poisson: &poisson
 
 poisson-scale-k1_5: &poisson_scale_k1_5
   <<: *poisson
-  clearml_dataset_id: '5460a4e0e9014632aa35b6d0f503e318'
+  clearml_dataset_id: 'd7ef1884d0da48028d887ff457e0bd38'
   train_path:    'train_k1_5_32k.h5'
   val_path:      'val_k1_5_4k.h5'
   test_path:     'test_k1_5_4k.h5'
