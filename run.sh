@@ -1,4 +1,5 @@
 #!/bin/bash
+
 ntrain=32768
 nval=4096
 ntest=4096

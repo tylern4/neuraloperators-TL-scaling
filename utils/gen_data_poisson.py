@@ -1,5 +1,10 @@
 import os, sys, time
 import argparse
+try:
+    import cupy as npx
+except:
+    import numpy as npx
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -18,14 +23,14 @@ def rbf(x, y, p, sigma=1/64, spacing=2/64, ng=256, center=(0.5,0.5)):
     """ create an rbf grid basis functions """
     num = np.sqrt(ng) # num of centers in each direction
     l = (num - 1) * spacing # length of grid in each direction
-    
+
     centers_x = np.arange(center[0]-l/2, center[0]+l/2+spacing, spacing)
     centers_y = np.arange(center[1]-l/2, center[1]+l/2+spacing, spacing)
     centers_x, centers_y = np.meshgrid(centers_x, centers_y)
     ratio = []
     c = []
-    
-    
+
+
     for cx, cy in zip(centers_x.flatten(), centers_y.flatten()):
         r = (x - cx)**2 + (y - cy)**2
         R = 2 * sigma**2
@@ -33,14 +38,14 @@ def rbf(x, y, p, sigma=1/64, spacing=2/64, ng=256, center=(0.5,0.5)):
         c.append(1./(2*np.pi*sigma**2)) # normalizing factor
 
     source = 0*ratio[0]
-    
+
     idx = 0
     for r, ci in zip(ratio, c):
         source += p[idx]*1*np.exp(-r)
         idx += 1
 
     source = source/np.max(source)
-        
+
     dc = np.mean(source.flatten())
     source = source - dc # remove integral of source
 
@@ -49,9 +54,9 @@ def rbf(x, y, p, sigma=1/64, spacing=2/64, ng=256, center=(0.5,0.5)):
 def get_random_diffusion_tensor(e1, e2):
     a1 = 1
     a4 = e1 + np.random.rand() * (e2 - e1)
-    
+
     theta = np.random.rand() * 2 * np.pi
-    rot = np.array([[np.cos(theta),-np.sin(theta)],[np.sin(theta),np.cos(theta)]]) 
+    rot = np.array([[np.cos(theta),-np.sin(theta)],[np.sin(theta),np.cos(theta)]])
     theta_neg = -1 * theta
     rot_neg = np.array([[np.cos(theta_neg),-np.sin(theta_neg)],[np.sin(theta_neg),np.cos(theta_neg)]])
     A = np.array([[a1, 0], [0, a4]])
@@ -60,7 +65,7 @@ def get_random_diffusion_tensor(e1, e2):
     return A
 
 def diffusion_op(u, k, K, nx, ny, params):
-    u = u.reshape((nx, ny))    
+    u = u.reshape((nx, ny))
     gradux, graduy = grad(u, params)
     # diff tensor
     Kux = K['k11']*gradux + K['k12']*graduy
@@ -69,7 +74,7 @@ def diffusion_op(u, k, K, nx, ny, params):
     Kux *= k
     Kuy *= k
     return div(Kux, Kuy, params)
-    
+
 def poisson(x, y, std, space, vf, params):
     k_mat = get_random_diffusion_tensor(params.e1, params.e2)
     K = {'k11': k_mat[0,0], 'k22': k_mat[1,1], 'k12': k_mat[0,1]}
@@ -150,7 +155,7 @@ if __name__ == '__main__':
     seed = 0
 
     random.seed(seed)
-    np.random.seed(seed)
+    npx.random.seed(seed)
 
     ntrain = args.ntrain
     nval = args.nval
@@ -159,8 +164,8 @@ if __name__ == '__main__':
     lx = ly = 1
     dx = lx/nx
     dy = ly/ny
-    x = np.arange(0, lx, dx)
-    y = np.arange(0, ly, dy)
+    x = npx.arange(0, lx, dx)
+    y = npx.arange(0, ly, dy)
     params = {}
     params["diff_coef_freq"] = 0
     params["dc"] = 0
@@ -170,7 +175,7 @@ if __name__ == '__main__':
     params["diff_coef_scale"] = 0.01
     params["e1"] = args.e1
     params["e2"] = args.e2
-    
+
     params["ng"] = args.ng
     params['sparse'] = args.sparse
     params = SimpleNamespace(**params)
@@ -178,14 +183,14 @@ if __name__ == '__main__':
     print("Sampling diffusion from {} to {}".format(params.e1, params.e2))
     std = 1/32
     space = 2*std
-    x_g, y_g = np.meshgrid(x, y)
+    x_g, y_g = npx.meshgrid(x, y)
 
-    train = np.zeros((ntrain, 2, x.shape[0], y.shape[0]))
-    train_k = np.zeros((ntrain, 3))
-    val = np.zeros((nval, 2, x.shape[0], y.shape[0]))
-    val_k = np.zeros((nval, 3))
-    test = np.zeros((ntest, 2, x.shape[0], y.shape[0]))
-    test_k = np.zeros((ntest, 3))
+    train = npx.zeros((ntrain, 2, x.shape[0], y.shape[0]))
+    train_k = npx.zeros((ntrain, 3))
+    val = npx.zeros((nval, 2, x.shape[0], y.shape[0]))
+    val_k = npx.zeros((nval, 3))
+    test = npx.zeros((ntest, 2, x.shape[0], y.shape[0]))
+    test_k = npx.zeros((ntest, 3))
 
     vfs = [0.2, 0.4, 0.6, 0.8]
     num_vfs = len(vfs)
@@ -223,10 +228,10 @@ if __name__ == '__main__':
                 print("finished {} test".format(sim_test))
 
     print("time = {}".format(time.time() - t0))
-    datapath = args.datapath 
+    datapath = args.datapath
 
     print("saving files to {}".format(datapath))
 
-    create_hdf5(os.path.join(datapath, "_train_k{}_{}_32k.h5".format(params.e1,params.e2)), train, train_k)
-    create_hdf5(os.path.join(datapath, "_val_k{}_{}_4k.h5".format(params.e1,params.e2)), val, val_k)
-    create_hdf5(os.path.join(datapath, "_test_k{}_{}_4k.h5".format(params.e1,params.e2)), test, test_k)
+    create_hdf5(os.path.join(datapath, "train_k{}_{}_32k.h5".format(params.e1,params.e2)), train, train_k)
+    create_hdf5(os.path.join(datapath, "val_k{}_{}_4k.h5".format(params.e1,params.e2)), val, val_k)
+    create_hdf5(os.path.join(datapath, "test_k{}_{}_4k.h5".format(params.e1,params.e2)), test, test_k)
