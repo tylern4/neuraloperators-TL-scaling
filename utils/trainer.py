@@ -58,7 +58,7 @@ class Trainer():
     def __init__(self, params, args):
         self.sweep_id = args.sweep_id
         self.root_dir = args.root_dir
-        self.config = args.config 
+        self.config = args.config
         self.run_num = args.run_num
         print('run_num', self.run_num)
         self.world_size = 1
@@ -89,7 +89,7 @@ class Trainer():
         if torch.cuda.is_available():
             torch.cuda.set_device(self.local_rank)
             torch.backends.cudnn.benchmark = True
-        
+
         self.log_to_screen = params.log_to_screen and self.world_rank==0
         self.log_to_wandb = params.log_to_wandb and self.world_rank==0
         self.log_to_clearml = params.log_to_clearml #and self.world_rank==0
@@ -140,7 +140,7 @@ class Trainer():
             self.init_exp_dir(exp_dir)
             if self.log_to_wandb:
                 wandb.init(dir=os.path.join(exp_dir, "wandb"),
-                           config=self.params.params, name=self.params.name, group=self.params.group, project=self.params.project, 
+                           config=self.params.params, name=self.params.name, group=self.params.group, project=self.params.project,
                            entity=self.params.entity, resume=self.params.resuming)
             if self.log_to_clearml:
                 try:
@@ -201,7 +201,7 @@ class Trainer():
         # domain grid
         self.domain = DomainXY(self.params)
 
-        
+
         if self.params.model == 'fno':
             self.model = models.fno.fno(self.params).to(self.device)
         else:
@@ -254,7 +254,7 @@ class Trainer():
         best_epoch = 0
         best_err = 1
         self.logs['best_epoch'] = best_epoch
-        plot_figs = self.params.plot_figs
+        plot_figs = True # self.params.plot_figs
 
         for epoch in range(self.startEpoch, self.params.max_epochs):
             self.epoch = epoch
@@ -301,23 +301,23 @@ class Trainer():
                 self.logs['learning_rate'] = self.optimizer.param_groups[0]['lr']
                 self.logs['time_per_epoch'] = tr_time
                 wandb.log(self.logs, step=self.epoch+1)
-                
+
             if self.log_to_clearml and self.clearml_task:
                 try:
                     # Log metrics to ClearML
                     self.logs['learning_rate'] = self.optimizer.param_groups[0]['lr']
                     self.logs['time_per_epoch'] = tr_time
-                    
+
                     # Log scalar metrics
                     for key, value in self.logs.items():
                         if key != 'vis' and isinstance(value, (int, float)):
                             self.clearml_task.get_logger().report_scalar(
-                                title=key, 
-                                series='train', 
-                                value=value, 
+                                title=key,
+                                series='train',
+                                value=value,
                                 iteration=self.epoch+1
                             )
-                    
+
                     # Log visualization if available
                     if plot_figs:
                         fig = vis_fields(fields, self.params, self.domain)
@@ -339,14 +339,14 @@ class Trainer():
 
         if self.log_to_wandb:
             wandb.finish()
-            
+
         if self.log_to_clearml and self.clearml_task:
             try:
                 self.clearml_task.close()
             except Exception as e:
                 logging.warning(f"Failed to close ClearML task: {e}")
 
-    
+
     def get_model_wt_norm(self, model):
         n = 0
         for p in model.parameters():
@@ -396,7 +396,7 @@ class Trainer():
 
             grad_norm = compute_grad_norm(self.model.parameters())
             tr_err = l2_err(u.detach(), targets.detach())
-    
+
             # add all the minibatch losses
             self.logs['train_loss'] += loss.detach()
             self.logs['data_loss'] += loss_data.detach()
@@ -445,8 +445,8 @@ class Trainer():
                 loss = loss_data + loss_bc + loss_pde
                 self.logs['val_err'] += l2_err(u.detach(), targets.detach())
                 self.logs['val_loss'] += loss.detach()
-                if i == idx: 
-                    source = inputs[img_idx,0].detach().cpu().numpy() 
+                if i == idx:
+                    source = inputs[img_idx,0].detach().cpu().numpy()
                     soln = targets[img_idx,0].detach().cpu().numpy()
                     pred = u[img_idx,0].detach().cpu().numpy()
                     pde_res = 0*pred
@@ -473,14 +473,14 @@ class Trainer():
             torch.save({'iters': self.iters, 'epoch': self.epoch, 'model_state': model.state_dict(), 'optimizer_state_dict': self.optimizer.state_dict(), 'scheduler_state_dict': (self.scheduler.state_dict() if  self.scheduler is not None else None)}, checkpoint_path.replace('.tar', '_best.tar'))
 
     def restore_checkpoint(self, checkpoint_path):
-        checkpoint = torch.load(checkpoint_path, map_location='cuda:{}'.format(self.local_rank)) 
+        checkpoint = torch.load(checkpoint_path, map_location='cuda:{}'.format(self.local_rank))
         try:
             self.model.load_state_dict(checkpoint['model_state'])
         except:
             new_state_dict = OrderedDict()
             for key, val in checkpoint['model_state'].items():
                 name = key[7:]
-                new_state_dict[name] = val 
+                new_state_dict[name] = val
             self.model.load_state_dict(new_state_dict)
 
         self.iters = checkpoint['iters']
@@ -490,16 +490,16 @@ class Trainer():
             self.scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
 
     def load_model(self, checkpoint_path):
-        checkpoint = torch.load(checkpoint_path, map_location='cuda:{}'.format(self.local_rank)) 
+        checkpoint = torch.load(checkpoint_path, map_location='cuda:{}'.format(self.local_rank))
         try:
             self.model.load_state_dict(checkpoint['model_state'])
         except:
             new_state_dict = OrderedDict()
             for key, val in checkpoint['model_state'].items():
                 name = key[7:]
-                new_state_dict[name] = val 
+                new_state_dict[name] = val
             self.model.load_state_dict(new_state_dict)
- 
+
     def switch_off_grad(self, model):
         for param in model.parameters():
             param.requires_grad = False
