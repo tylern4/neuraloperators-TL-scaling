@@ -1,1 +1,10 @@
+h5py
+matplotlib
+mpi4py
+numpy
+ruamel.yaml
+scipy
+torch
+torchvision
+wandb
 clearml
