@@ -19,6 +19,9 @@ o2=10
 python utils/gen_data_poisson.py --ntrain=$ntrain --nval=$nval --ntest=$ntest \
                     --ng=$ng --sparse --n 128 --datapath $datapath --e1 $e1 --e2 $e2
 
+python utils/get_scale.py
+
+
 export MASTER_ADDR=$(hostname)
 config_file=./config/operators_poisson.yaml
 config="poisson-scale-k1_5"
