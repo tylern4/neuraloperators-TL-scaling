@@ -16,10 +16,10 @@ adr2=1
 o1=1 # helmholtz wave number range
 o2=10
 
-python utils/gen_data_poisson.py --ntrain=$ntrain --nval=$nval --ntest=$ntest \
-                    --ng=$ng --sparse --n 128 --datapath $datapath --e1 $e1 --e2 $e2
+#python utils/gen_data_poisson.py --ntrain=$ntrain --nval=$nval --ntest=$ntest \
+#                    --ng=$ng --sparse --n 128 --datapath $datapath --e1 $e1 --e2 $e2
 
-python utils/get_scale.py
+#python utils/get_scale.py
 
 
 export MASTER_ADDR=$(hostname)
@@ -32,4 +32,4 @@ results_dir=$SCRATCH/clearml_tests/results
 mkdir -p ${results_dir}
 
 source export_DDP_vars.sh
-srun --overlap -l -n 4 --cpus-per-task=10 --gpus-per-node 4 python train.py --yaml_config=$config_file --config=$config --run_num=$run_num --root_dir=$results_dir
+srun --overlap -n 4 --gpus-per-node 4 python train.py --yaml_config=$config_file --config=$config --run_num=$run_num --root_dir=$results_dir
