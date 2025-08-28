@@ -30,7 +30,6 @@ run_num="04"
 # path/to/logs
 results_dir=$SCRATCH/clearml_tests/results
 mkdir -p ${results_dir}
-unset ${!SLURM_@};
 
 source export_DDP_vars.sh
-srun --overlap -n 4 --gpus-per-node 4 python train.py --yaml_config=$config_file --config=$config --run_num=$run_num --root_dir=$results_dir
+python train.py --yaml_config=$config_file --config=$config --run_num=$run_num --root_dir=$results_dir
