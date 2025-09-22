@@ -4,7 +4,7 @@ ntrain=32768
 nval=4096
 ntest=4096
 ng=144
-datapath=$PWD
+# datapath=${PWD}
 
 e1=1  # poissons diffusion eigenvalue range
 e2=5
